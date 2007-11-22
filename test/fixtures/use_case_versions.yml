@@ -1,0 +1,37 @@
+one:
+    id: 1
+    original_id: 1
+    deleted: false
+    name: 'Use-case number one'
+two_1:
+    id: 10
+    original_id: 2
+    deleted: false
+    name: 'Use-case number two, oldest version'
+two_2:
+    id: 11
+    original_id: 2
+    deleted: false
+    name: 'Use-case number two, newest'
+
+# Use-cases for the "has_many_through" tests
+has_many_case1:
+    id: 31
+    original_id: 31
+    deleted: false
+    version: 1
+    name: 'Use-case for has_many_through tests, number one'
+has_many_case2:
+    id: 32
+    original_id: 32
+    deleted: false
+    version: 1
+    name: 'Use-case for has_many_through tests, number two'
+    
+# Use-case for the "follow_belongs_to_unsubversive_model" test
+greatest_use_case:
+    id: 41
+    original_id: 41
+    deleted: false
+    version: 2
+    name: 'The greatest use-case'

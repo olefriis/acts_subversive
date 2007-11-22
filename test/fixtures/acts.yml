@@ -1,0 +1,9 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+one:
+  id: 1
+  actor_id: 1
+  use_case_id: 2
+two:
+  id: 2
+  actor_id: 2
+  use_case_id: 2

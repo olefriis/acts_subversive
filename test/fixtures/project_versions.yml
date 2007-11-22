@@ -1,0 +1,42 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+one_one:
+  id: 1
+  original_id: 1
+  version: 1
+  deleted: false
+  name: Hej med dig
+one_two:
+  id: 2
+  original_id: 1
+  version: 2
+  deleted: false
+  name: Hej med dig i version 2
+one_four:
+  id: 3
+  original_id: 1
+  version: 4
+  deleted: false
+  name: Hej med dig i sidste version
+one_five:
+  id: 4
+  original_id: 1
+  version: 5
+  deleted: true
+  name: Hej med dig i sidste version
+
+two:
+  id: 20
+  original_id: 2
+  version: 1
+  deleted: false
+  name: djkdgjk
+  created_by_id: 2
+  main_use_case_id: 41
+
+three:
+  id: 30
+  original_id: 3
+  version: 2
+  deleted: false
+  name: ipipipip
+# main_use_case_id: nil
