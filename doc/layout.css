@@ -1,0 +1,14 @@
+body
+{
+	background-color: #dddddd;
+}
+
+code
+{
+	display: block;
+	border: 1px solid #7F9DB9;
+	background-color: #ff9955;
+	font-family: monospace;
+	width: 100%;
+	overflow: auto;
+}

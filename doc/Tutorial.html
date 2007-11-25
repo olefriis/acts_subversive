@@ -1,0 +1,108 @@
+<html>
+<head>
+	<title>Tutorial</title>
+    <link href="layout.css" media="screen" rel="Stylesheet" type="text/css"/>
+</head>
+
+<body>
+<h1>acts_subversive tutorial</h1>
+<p>This tutorial will help you get up and running with a simple example Rails project using acts_subversive. The walk-through is by no means a thorough explanation of acts_subversive. I assume that you know how to set up a new Rails project, including creating a new database and setting up the connection.</p>
+
+<p>We will not create any views or anything fancy - just some model classes and some tests that show that we can indeed go back in time and follow relations in that old "snapshot". <b>The fancy view stuff is for yourself to design!</b></p>
+
+
+<h2>Setting up the project</h2>
+<p>First, you have to do "rails my_project_name", create a database, and set up database.yml to reflect your database connections. Then install acts_subversive: Simply copy the "acts_subversive" to vendor/plugins.</p>
+
+<p>Then, it is time for your first, special migration file: Create a new file called 001_create_version_number_table.rb, and put it in db/migrate (create the "migrate" folder if it does not already exist):</p>
+
+<code>
+class CreateVersionNumberTable < ActiveRecord::Migration<br/>
+&nbsp;def self.up<br/>
+&nbsp;&nbsp;create_version_number_table<br/>
+&nbsp;end<br/>
+<br/>
+&nbsp;def self.down<br/>
+&nbsp;&nbsp;drop_version_number_table<br/>
+&nbsp;end<br/>
+end
+</code>
+
+<p>This will set up the special version table that acts_subversive is so dependent on. Just to make sure nothing has already gone wrong, call "rake db:migrate" from a shell. Something like this should come up:</p>
+
+<code>
+your-computer:~/code/subversive_example user$ rake db:migrate<br/>
+(in /Users/olefriisstergaard/code/subversive_example)<br/>
+== CreateVersionNumberTable: migrating ========================================<br/>
+-- create_version_number_table()<br/>
+&nbsp;&nbsp;&nbsp;-> 0.0031s<br/>
+== CreateVersionNumberTable: migrated (0.0033s) ===============================
+</code>
+
+<p>And your database should contain just two tables: "schema_info" and "version_numbers". Still with us? Great!</p>
+
+<h2>The first model class</h2>
+<p>From the shell, type "ruby script/generate model person". You know what this does. And you know that the first file we'll  have a look at now is test/unit/person_test. It's pretty dull right now, but let's make it interesting:</p>
+
+<code>
+require File.dirname(__FILE__) + '/../test_helper'<br/>
+<br/>
+class PersonTest < Test::Unit::TestCase<br/>
+&nbsp;def setup<br/>
+&nbsp;&nbsp;person = Person.create(:name => 'Homer', :age => 35)<br/>
+&nbsp;&nbsp;@person_id = person.id<br/>
+&nbsp;&nbsp;@first_version = VersionNumber.current_version<br/>
+&nbsp;&nbsp;person.age = 45<br/>
+&nbsp;&nbsp;person.save!<br/>
+&nbsp;&nbsp;@second_version = VersionNumber.current_version<br/>
+&nbsp;end<br/>
+<br/>
+&nbsp;def test_can_get_newest_version<br/>
+&nbsp;&nbsp;person = Person.find(@person_id)<br/>
+&nbsp;&nbsp;assert_equal 'Homer', person.name<br/>
+&nbsp;&nbsp;assert_equal 45, person.age<br/>
+&nbsp;end<br/>
+<br/>
+&nbsp;def test_can_get_first_version<br/>
+&nbsp;&nbsp;person = Person.find_version(@person_id, @first_version)<br/>
+&nbsp;&nbsp;assert_equal 'Homer', person.name<br/>
+&nbsp;&nbsp;assert_equal 35, person.age<br/>
+&nbsp;end<br/>
+end
+</code>
+
+<p>Running the test results in a lot of errors - we haven't run "rake db:migrate" with our new model yet. So let's do that - but only afte we've modified the file "002_create_people.rb":</p>
+
+<code>
+class CreatePeople < ActiveRecord::Migration<br/>
+&nbsp;def self.up<br/>
+&nbsp;&nbsp;create_versioned_table :people do |t|<br/>
+&nbsp;&nbsp;&nbsp;t.column :name, :string<br/>
+&nbsp;&nbsp;&nbsp;t.column :age, :integer<br/>
+&nbsp;&nbsp;end<br/>
+&nbsp;end<br/>
+<br/>
+&nbsp;def self.down<br/>
+&nbsp;&nbsp;drop_versioned_table :people<br/>
+&nbsp;end<br/>
+end
+</code>
+
+<p>So, we've defined the "people" table with two attributes: name and age. Oh, and we're not calling "create_table" any more, but instead "create_versioned_table". Let's call "rake db:migrate" now and see what's happening. Have a look in your database: You now have TWO new tables: "people" (as we would have expected) and "person_versions". Whoa! The "people" table has the three columns you would expect: The ubiquitous "id", and then "name" and "age". The "person_versions" table has these columns, plus three more: "original_id", "version", and "deleted". I will not go into further detail about these columns here, but they are necessary for acts_subversive's functionality.</p>
+
+<p>But back to our test. Run it. It still produces one error: "NoMethodError: undefined method `find_version' for Person:Class". Oh yes. We somehow need to tell acts_subversive that the Person class is versioned. You could argue that the plugin should see whether the table "person_versions" exists and then do something special about the Person class, but that's just not how it works. Instead, open app/models/person.rb and edit it:</p>
+
+<code>
+class Person < ActiveRecord::Base<br/>
+&nbsp;acts_subversive<br/>
+end
+</code>
+
+<p>So, that's a single line to tell the acts_subversive plugin that the Person class is versioned. Run the test again, and it's all good and green.</p>
+
+
+<h2>Relations</h2>
+
+
+</body>
+</html>
