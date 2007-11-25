@@ -220,5 +220,9 @@
 <h3>Performance</h3>
 <p>acts_subversive probably needs some good indices in the database in the version tables if you do a lot of searching back in time. Make yourself a cup of hot cocoa, fire up your database profiler, and add those indices. acts_subversive doesn't know how often or in which ways you access your old versions, so you need to take care of that yourself.</p>
 
+
+<h3>acts_as_list and friends</h3>
+<p>Currently, acts_subversive does not handle classes that declare "acts_as_list", and there may be many more ActiveRecord nifties that are not supported. acts_as_list <b>will</b> be supported in the foreseeable future (because I need it myself), but there will always be an ActiveRecord feature or another plugin that can make acts_subversive act_weird. Therefore, be sure to test your stuff before you rely too much on acts_subversive.</p>
+
 </body>
 </html>
