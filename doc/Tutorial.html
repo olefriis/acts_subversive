@@ -17,26 +17,26 @@
 <p>Then, it is time for your first, special migration file: Create a new file called 001_create_version_number_table.rb, and put it in db/migrate (create the "migrate" folder if it does not already exist):</p>
 
 <code>
-class CreateVersionNumberTable < ActiveRecord::Migration<br/>
-&nbsp;def self.up<br/>
-&nbsp;&nbsp;create_version_number_table<br/>
-&nbsp;end<br/>
-<br/>
-&nbsp;def self.down<br/>
-&nbsp;&nbsp;drop_version_number_table<br/>
-&nbsp;end<br/>
-end
+	class CreateVersionNumberTable &lt; ActiveRecord::Migration<br/>
+	&nbsp;def self.up<br/>
+	&nbsp;&nbsp;create_version_number_table<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def self.down<br/>
+	&nbsp;&nbsp;drop_version_number_table<br/>
+	&nbsp;end<br/>
+	end
 </code>
 
 <p>This will set up the special version table that acts_subversive is so dependent on. Just to make sure nothing has already gone wrong, call "rake db:migrate" from a shell. Something like this should come up:</p>
 
 <code>
-your-computer:~/code/subversive_example user$ rake db:migrate<br/>
-(in /Users/olefriisstergaard/code/subversive_example)<br/>
-== CreateVersionNumberTable: migrating ========================================<br/>
--- create_version_number_table()<br/>
-&nbsp;&nbsp;&nbsp;-> 0.0031s<br/>
-== CreateVersionNumberTable: migrated (0.0033s) ===============================
+	your-computer:~/code/subversive_example user$ rake db:migrate<br/>
+	(in /Users/olefriisstergaard/code/subversive_example)<br/>
+	== CreateVersionNumberTable: migrating ========================================<br/>
+	-- create_version_number_table()<br/>
+	&nbsp;&nbsp;&nbsp;-> 0.0031s<br/>
+	== CreateVersionNumberTable: migrated (0.0033s) ===============================
 </code>
 
 <p>And your database should contain just two tables: "schema_info" and "version_numbers". Still with us? Great!</p>
@@ -45,47 +45,47 @@ your-computer:~/code/subversive_example user$ rake db:migrate<br/>
 <p>From the shell, type "ruby script/generate model person". You know what this does. And you know that the first file we'll  have a look at now is test/unit/person_test. It's pretty dull right now, but let's make it interesting:</p>
 
 <code>
-require File.dirname(__FILE__) + '/../test_helper'<br/>
-<br/>
-class PersonTest < Test::Unit::TestCase<br/>
-&nbsp;def setup<br/>
-&nbsp;&nbsp;person = Person.create(:name => 'Homer', :age => 35)<br/>
-&nbsp;&nbsp;@person_id = person.id<br/>
-&nbsp;&nbsp;@first_version = VersionNumber.current_version<br/>
-&nbsp;&nbsp;person.age = 45<br/>
-&nbsp;&nbsp;person.save!<br/>
-&nbsp;&nbsp;@second_version = VersionNumber.current_version<br/>
-&nbsp;end<br/>
-<br/>
-&nbsp;def test_can_get_newest_version<br/>
-&nbsp;&nbsp;person = Person.find(@person_id)<br/>
-&nbsp;&nbsp;assert_equal 'Homer', person.name<br/>
-&nbsp;&nbsp;assert_equal 45, person.age<br/>
-&nbsp;end<br/>
-<br/>
-&nbsp;def test_can_get_first_version<br/>
-&nbsp;&nbsp;person = Person.find_version(@person_id, @first_version)<br/>
-&nbsp;&nbsp;assert_equal 'Homer', person.name<br/>
-&nbsp;&nbsp;assert_equal 35, person.age<br/>
-&nbsp;end<br/>
-end
+	require File.dirname(__FILE__) + '/../test_helper'<br/>
+	<br/>
+	class PersonTest &lt; Test::Unit::TestCase<br/>
+	&nbsp;def setup<br/>
+	&nbsp;&nbsp;person = Person.create(:name => 'Homer', :age => 35)<br/>
+	&nbsp;&nbsp;@person_id = person.id<br/>
+	&nbsp;&nbsp;@first_version = VersionNumber.current_version<br/>
+	&nbsp;&nbsp;person.age = 45<br/>
+	&nbsp;&nbsp;person.save!<br/>
+	&nbsp;&nbsp;@second_version = VersionNumber.current_version<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def test_can_get_newest_version<br/>
+	&nbsp;&nbsp;person = Person.find(@person_id)<br/>
+	&nbsp;&nbsp;assert_equal 'Homer', person.name<br/>
+	&nbsp;&nbsp;assert_equal 45, person.age<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def test_can_get_first_version<br/>
+	&nbsp;&nbsp;person = Person.find_version(@person_id, @first_version)<br/>
+	&nbsp;&nbsp;assert_equal 'Homer', person.name<br/>
+	&nbsp;&nbsp;assert_equal 35, person.age<br/>
+	&nbsp;end<br/>
+	end
 </code>
 
 <p>Running the test results in a lot of errors - we haven't run "rake db:migrate" with our new model yet. So let's do that - but only afte we've modified the file "002_create_people.rb":</p>
 
 <code>
-class CreatePeople < ActiveRecord::Migration<br/>
-&nbsp;def self.up<br/>
-&nbsp;&nbsp;create_versioned_table :people do |t|<br/>
-&nbsp;&nbsp;&nbsp;t.column :name, :string<br/>
-&nbsp;&nbsp;&nbsp;t.column :age, :integer<br/>
-&nbsp;&nbsp;end<br/>
-&nbsp;end<br/>
-<br/>
-&nbsp;def self.down<br/>
-&nbsp;&nbsp;drop_versioned_table :people<br/>
-&nbsp;end<br/>
-end
+	class CreatePeople &lt; ActiveRecord::Migration<br/>
+	&nbsp;def self.up<br/>
+	&nbsp;&nbsp;create_versioned_table :people do |t|<br/>
+	&nbsp;&nbsp;&nbsp;t.column :name, :string<br/>
+	&nbsp;&nbsp;&nbsp;t.column :age, :integer<br/>
+	&nbsp;&nbsp;end<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def self.down<br/>
+	&nbsp;&nbsp;drop_versioned_table :people<br/>
+	&nbsp;end<br/>
+	end
 </code>
 
 <p>So, we've defined the "people" table with two attributes: name and age. Oh, and we're not calling "create_table" any more, but instead "create_versioned_table". Let's call "rake db:migrate" now and see what's happening. Have a look in your database: You now have TWO new tables: "people" (as we would have expected) and "person_versions". Whoa! The "people" table has the three columns you would expect: The ubiquitous "id", and then "name" and "age". The "person_versions" table has these columns, plus three more: "original_id", "version", and "deleted". I will not go into further detail about these columns here, but they are necessary for acts_subversive's functionality.</p>
@@ -93,16 +93,132 @@ end
 <p>But back to our test. Run it. It still produces one error: "NoMethodError: undefined method `find_version' for Person:Class". Oh yes. We somehow need to tell acts_subversive that the Person class is versioned. You could argue that the plugin should see whether the table "person_versions" exists and then do something special about the Person class, but that's just not how it works. Instead, open app/models/person.rb and edit it:</p>
 
 <code>
-class Person < ActiveRecord::Base<br/>
-&nbsp;acts_subversive<br/>
-end
+	class Person &lt; ActiveRecord::Base<br/>
+	&nbsp;acts_subversive<br/>
+	end
 </code>
 
 <p>So, that's a single line to tell the acts_subversive plugin that the Person class is versioned. Run the test again, and it's all good and green.</p>
 
 
 <h2>Relations</h2>
+<p>That's really cool! We're able to recover the person in an earlier version. But a plugin as acts_as_versioned can do this as well. So, what's new? Well, now we'll do a trick that acts_as_version won't make you do. Let's say that a person can have a number of addresses. Let's therefore create a model class called "Address" by invoking "ruby script/generate model address" from the shell. What we want to do is satisfy this test:</p>
 
+<code>
+	require File.dirname(__FILE__) + '/../test_helper'<br/>
+	<br/>
+	class AddressTest &lt; Test::Unit::TestCase<br/>
+	&nbsp;def setup<br/>
+	&nbsp;&nbsp;person = Person.create(:name => 'Marge', :age => 37)<br/>
+	&nbsp;&nbsp;@person_id = person.id<br/>
+	&nbsp;&nbsp;@version_with_no_address = VersionNumber.current_version<br/>
+	&nbsp;&nbsp;Address.create(:postal_code => 1234, :text => 'Springville', :person_id => @person_id)<br/>
+	&nbsp;&nbsp;@version_with_single_address = VersionNumber.current_version<br/>
+	&nbsp;&nbsp;Address.create(:postal_code => 9999, :text => 'Texas', :person_id => @person_id)<br/>
+	&nbsp;&nbsp;@version_with_multiple_addresses = VersionNumber.current_version<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def test_can_get_version_without_addresses<br/>
+	&nbsp;&nbsp;person = Person.find_version(@person_id, @version_with_no_address)<br/>
+	&nbsp;&nbsp;assert_equal 0, person.addresses.length<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def test_can_get_version_with_single_address<br/>
+	&nbsp;&nbsp;person = Person.find_version(@person_id, @version_with_single_address)<br/>
+	&nbsp;&nbsp;assert_equal 1, person.addresses.length<br/>
+	&nbsp;&nbsp;assert_equal 'Springville', person.addresses[0].text<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def test_can_get_version_with_multiple_addresses<br/>
+	&nbsp;&nbsp;person = Person.find_version(@person_id, @version_with_multiple_addresses)<br/>
+	&nbsp;&nbsp;assert_equal 2, person.addresses.length<br/>
+	&nbsp;&nbsp;assert_equal 'Springville', person.addresses[0].text<br/>
+	&nbsp;&nbsp;assert_equal 'Texas', person.addresses[1].text<br/>
+	&nbsp;end<br/>
+	end
+</code>
+
+<p>Easy! First, the file "003_create_addresses.rb":</p>
+
+<code>
+	class CreateAddresses &lt; ActiveRecord::Migration<br/>
+	&nbsp;def self.up<br/>
+	&nbsp;&nbsp;create_versioned_table :addresses do |t|<br/>
+	&nbsp;&nbsp;&nbsp;t.column :person_id, :integer<br/>
+	&nbsp;&nbsp;&nbsp;t.column :postal_code, :integer<br/>
+	&nbsp;&nbsp;&nbsp;t.column :text, :text<br/>
+	&nbsp;&nbsp;end<br/>
+	&nbsp;end<br/>
+	<br/>
+	&nbsp;def self.down<br/>
+	&nbsp;&nbsp;drop_versioned_table :addresses<br/>
+	&nbsp;end<br/>
+	end
+</code>
+
+<p>Then, the Person class needs to know about the association:</p>
+
+<code>
+	class Person &lt; ActiveRecord::Base<br/>
+	&nbsp;acts_subversive<br/>
+	&nbsp;has_many :addresses<br/>
+	end
+</code>
+
+<p>Finally, the Address class should be versioned and know about the association:</p>
+
+<code>
+	class Address &lt; ActiveRecord::Base<br/>
+	&nbsp;acts_subversive<br/>
+	&nbsp;belongs_to :person<br/>
+	end
+</code>
+
+<p>After running "rake db:migrate", the test should run smoothly.</p>
+
+
+<h2>So what?</h2>
+<p>Isn't that cool? Of course, this is just a small tutorial on how to use acts_subversive. You'll want to push it a lot further. You'll want to have a rich domain model which is all versioned, and you want to create views to let your users surf through time. When you're using acts_subversive, this will be no problem.</p>
+
+
+<h2>Limitations that you must know of</h2>
+<p>That's right. acts_subversive has certain limitations. We'll have a look at those.</p>
+
+<h3>has_and_belongs_to_many</h3>
+<p>acts_subversive does not support "has_and_belongs_to_many" in your model class. Say that a person has a many-to-many relationship to addresses (so that a person can have several addresses, and several people can live at the same address). Normally, you would write this as:</p>
+
+<code> 
+	class Person &lt; ActiveRecord::Base<br/>
+	&nbsp;acts_subversive<br/>
+	&nbsp;has_and_belongs_to_many :addresses<br/>
+	end
+</code>
+
+<p>acts_subversive cannot manage this many-to-many relationship. What you do instead is create a <b>join class</b>: A separate class representing the join table that you would have to create anyway:</p>
+
+<code>
+	class Settlement &lt; ActiveRecord::Base<br/>
+	&nbsp;acts_subversive<br/>
+	&nbsp;belongs_to :person</br>
+	&nbsp;belongs_to :address</br>
+	end
+</code>
+
+<p>Your Person class should then be altered a bit:</p>
+
+<code> 
+	class Person &lt; ActiveRecord::Base<br/>
+	&nbsp;acts_subversive<br/>
+	&nbsp;has_many :settlements<br/>
+	&nbsp;has_many :addresses, :through => :settlements<br/>
+	end
+</code>
+
+<p>Your "Address" class should be altered similarly. Now you can access a person's "addresses" just like you otherwise would.</p>
+
+
+<h3>Performance</h3>
+<p>acts_subversive probably needs some good indices in the database in the version tables if you do a lot of searching back in time. Make yourself a cup of hot cocoa, fire up your database profiler, and add those indices. acts_subversive doesn't know how often or in which ways you access your old versions, so you need to take care of that yourself.</p>
 
 </body>
 </html>
