@@ -1,0 +1,112 @@
+<html>
+<head>
+	<title>Tutorial</title>
+    <link href="layout.css" media="screen" rel="Stylesheet" type="text/css"/>
+</head>
+
+<body>
+<h1>acts_subversive reference</h1>
+<p>This is the reference documentation for acts_subversive. It is fairly superficial. For documentation of actual methods, see the RDoc for the plugin. This document is still an early, rough draft.</p>
+
+
+<h2>Database level</h2>
+<p>The basic principle behind acts_subversive corresponds a lot to the way the Subversion version control system works: The system will keep track of a global version number, which will increase every time a change is made in the model. All these version numbers are stored in the table version_number which has these columns:</p>
+
+<table border="1">
+<tr><td>id</td><td>Primary key for the table. This id is also used as the global version number.</td></tr>
+<tr><td>created_at</td><td>The timestamp for this version.</td></tr>
+<tr><td>user</td><td>The user responsible for this version (not supported yet).</td></tr>
+</table>
+
+<p><b>Please note:</b> If your database does not assign primary keys in ascending order, acts_subversive will not work!</p>
+
+<p>For creating and dropping the version number table, acts_subversive gives you the methods create_version_number_table and drop_version_number_table. You should usually put these in the very first Rails migration file you create in your project.</p>
+
+<p>Apart from the global version number, acts_subversive needs a "shadow table" in addition to the real table for each versioned model class. Every time a change is made to a row in the real table, the row is also inserted into the shadow table. This shadow table includes all columns from the real table, in addition to these columns:</p>
+
+<table border="1">
+<tr><td>id</td><td>This column will also be in your real table, but the id in the shadow table has nothing to do with the id column in the real table. The id in the shadow table simply identifies a row in the shadow table.</td></tr>
+<tr><td>original_id</td><td>Corresponds to the id column in the real table.</td></tr>
+<tr><td>version</td><td>The global version number for this row.</td></tr>
+<tr><td>deleted</td><td>Signals whether or not this row was the result of a row from the original table being deleted.</td></tr>
+</table>
+
+<p>The name of the shadow table will be the real table name singularized and appended with "_versions". For example, for a model class called Apple, the real table name will be apples, and the shadow table will be called "apple_versions".</p>
+
+<p>For creating and dropping the shadow tables, acts_subversive includes the methods create_versioned_table and drop_versioned_table for use in Rails migrations. These methods are used exactly as create_table and drop_table, but will additionally generate the shadow table (including the extra columns needed).</p>
+
+
+<h2>Class level</h2>
+<p>In addition to having the shadow table, a class needs to specify that it is versioned by calling the "acts_subversive" method in the class definition:</p>
+
+<code>
+class Apple &lt; ActiveRecord::Base<br/>
+&nbsp;acts_subversive<br/>
+<br/>
+&nbsp;has_many :seeds<br/>
+&nbsp;---<br/>
+end
+</code>
+
+<p><b>Please note:</b> "acts_subversive" must be specified before any "has_many", "has_one", and "belongs_to" method calls.</p>
+
+<p>During the class definition, the acts_subversive method call will make sure that any subsequent "has_many", "has_one", and "belongs_to" method calls will define special versioned association accessors. If an object of class Apple in the example has been fetched from a specific version (via the class method find_version, which "acts_subversive" will create), the the "seeds" attribute will give Seed instances in the same version as the Apple object has been fetched. If the object, on the other hand, has been fetched through the normal ActiveRecord finders, the "seeds" attribute will work as normal.</p>
+
+<p><b>Please note:</b> "has_and_belongs_to_many" is not supported in acts_subversive. Therefore, if you have a many-to-many association, make an explicit join class.</p>
+
+<p>The call to "acts_subversive" will create the class method "find_version" which will make it possible to fetch an object with a given id in a given version. For example,</p>
+
+<code>
+Apple.fetch_version(23, 45)
+</code>
+
+<p>will fetch the apple with id 23 in version 45.</p>
+
+<p>The current global version number can be fetched by calling VersionNumber.current_version.</p>
+
+
+<h2>Versioned and non-versioned classes</h2>
+<p>In the Apple example above, we assumed that the Seed class will also contain a call to the "acts_subversive" method. But that is not necessary - you probably do not want to version your whole object model, only parts of it. In any big system, for example, you would have a domain object and classes representing users and permissions. You wouldn't want to version the users and permissions: If you want to exclude a user from the system, you do not want this user to be able to just go back in time and read old versions of the data. Let's take the simple Apple and Seed example:</p>
+
+<code>
+class Apple &lt; ActiveRecord::Base<br/>
+&nbsp;acts_subversive<br/>
+<br/>
+&nbsp;has_many :seeds<br/>
+end
+</code>
+
+<code>
+class Seed &lt; ActiveRecord::Base<br/>
+&nbsp;belongs_to :seeds<br/>
+end
+</code>
+
+<p>Notice that we haven't specified "acts_subversive" for the Seed class. Of course, fetching an apple like this:</p>
+
+<code>
+seed = Seed.find(id)<br/>
+apple = seed.apple
+</code>
+
+<p>will fetch the newest version of the apple. Let's take another quick example:</p>
+
+<code>
+old_apple = Apple.find_version(id, version)<br/>
+seed = old_apple.seed[0]<br/>
+new_apple = seed.apple
+</code>
+
+<p>Here, old_apple will of course contain the apple object with the given id in the given version. seed will contain the newest version of the old apple's first seed (what else? We don't have the old version of the seed object). new_apple will be taken from the newest seed object, so will contain the newest version of the apple. This example is actually a lot more complicated than you would expect:</p>
+
+<ul>
+<li>What if old_apple's first seed has been deleted since the version we fetched? In that case, seed will be nil, and we'll get an exception in the last line of the example.</li>
+<li>It may be that the apples and seeds have been rearranged since the old version, so new_apple might be the newest version of a completely different apple than old_apple.</li>
+</ul>
+
+
+<h2>Best practices</h2>
+<p>If you just let acts_subversive go ahead and create new version numbers all the time, you can have a look at the version_number table and fetch the version that was the newest at a certain point in time. However, here is a better idea: Create a class called Tag, and let it contain a version number. Let your users create instances of this class, and in the initializer for the class, simply copy VersionNumber.current_version into the tag's version number. This way, your users can create tags at certain points in time, for example when the model is in a certain state that should be remembered.</p>
+
+</body>
+</html>
