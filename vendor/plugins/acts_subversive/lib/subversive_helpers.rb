@@ -15,15 +15,25 @@ module ::ActiveRecord #:nodoc:
         version_object.original_id = object.id
       end
       
+      # Could be a lot nicer if we could just create a join condition and
+      # let ActiveRecord do the surrounding "select * from #{table_name} v where ("
+      # and "LIMIT 1", but instead it creates this SQL:
+      #
+      # select #{table_name}.* from #{table_name} v where (
+      #
+      # and SQLite doesn't understand that (says that there's no #{table_name}
+      # table).
       def Subversive.condition_find_versioned(table_name, id, version, id_column='original_id') #:nodoc:
         <<-END
-          v.#{id_column} = #{id}
-          and v.version = (
-            select max(version)
-            from #{table_name} v2
-            where v.original_id = v2.original_id
-              and v2.version <= #{version})
-          and v.deleted = 0
+          select * from #{table_name} v where (
+            v.#{id_column} = #{id}
+            and v.version = (
+              select max(version)
+              from #{table_name} v2
+              where v.original_id = v2.original_id
+                and v2.version <= #{version})
+            and v.deleted = 'f')
+          limit 1
         END
       end
 
@@ -34,12 +44,15 @@ module ::ActiveRecord #:nodoc:
 
         # Find the versioned object
         version_class = eval(klass.name + 'Version')
-        object_version = version_class.find(:first, :joins => 'v',
-          :conditions => cond)
+        #object_version = version_class.find(first, :joins => 'v',
+        #  :conditions => cond)
+        objects_version = version_class.find_by_sql(cond)
+        
 
         # Copy found versioned object to "normal" object
         object = nil
-        if object_version
+        if objects_version.size == 1
+          object_version = objects_version[0]
           object = klass.new
           copy_from_versioned(object_version, object, version)
         end
