@@ -24,17 +24,18 @@ module ::ActiveRecord #:nodoc:
       # and SQLite doesn't understand that (says that there's no #{table_name}
       # table).
       def Subversive.condition_find_versioned(table_name, id, version, id_column='original_id') #:nodoc:
-        <<-END
+        s = <<-END
           select * from #{table_name} v where (
-            v.#{id_column} = #{id}
+            v.#{id_column} = ?
             and v.version = (
               select max(version)
               from #{table_name} v2
               where v.original_id = v2.original_id
-                and v2.version <= #{version})
-            and v.deleted = 'f')
+                and v2.version <= ?)
+            and v.deleted = ?)
           limit 1
         END
+        [s, id, version, false]
       end
 
       def Subversive.find_version(klass, id, version)
