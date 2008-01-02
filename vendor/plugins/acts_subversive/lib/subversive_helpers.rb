@@ -33,7 +33,6 @@ module ::ActiveRecord #:nodoc:
               where v.original_id = v2.original_id
                 and v2.version <= ?)
             and v.deleted = ?)
-          limit 1
         END
         [s, id, version, false]
       end
