@@ -17,6 +17,16 @@ def setup_db
       t.column :project_id, :integer
       t.column :name, :text
     end
+
+    create_versioned_table :acts do |t|
+      t.column :actor_id, :integer
+      t.column :use_case_id, :integer
+    end
+
+    create_table :users do |t|
+      t.column :name, :string
+      t.column :current_project_id, :integer
+    end
   end
 end
 

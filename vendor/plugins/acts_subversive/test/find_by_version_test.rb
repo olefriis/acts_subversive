@@ -1,48 +1,43 @@
-require 'test/unit'
-
-require 'rubygems'
-gem 'activerecord', '>= 1.15.4.7794'
-require 'active_record'
-require 'active_record/fixtures'
-
-require "#{File.dirname(__FILE__)}/../init"
-require "#{File.dirname(__FILE__)}/../tasks/tasks"
-require "#{File.dirname(__FILE__)}/database_setup"
-require "#{File.dirname(__FILE__)}/model_classes"
+require "#{File.dirname(__FILE__)}/test_setup"
 
 ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
-setup_db
-
-
-# Version 1
-project = Project.create(:name => 'Hej med dig')
-
-# Version 2
-project.name = 'Hej med dig i version 2'
-project.save!
-
-# Version 3
-actor = Actor.create(:name => 'Actor in original version')
-
-# Version 4
-project.name = 'Hej med dig i sidste version'
-project.save!
-
-# Version 5
-project.destroy
-
-# Version 6
-actor.name = 'Actor in newer version'
-actor.save!
-
-# Version 7
-actor.destroy
-
-# Version 8
-Project.create(:name => 'Another project')
-
 
 class FindByVersionTest < Test::Unit::TestCase
+  def setup
+    setup_db
+
+    # Version 1
+    project = Project.create(:name => 'Hej med dig')
+
+    # Version 2
+    project.name = 'Hej med dig i version 2'
+    project.save!
+
+    # Version 3
+    actor = Actor.create(:name => 'Actor in original version')
+
+    # Version 4
+    project.name = 'Hej med dig i sidste version'
+    project.save!
+
+    # Version 5
+    project.destroy
+
+    # Version 6
+    actor.name = 'Actor in newer version'
+    actor.save!
+
+    # Version 7
+    actor.destroy
+
+    # Version 8
+    Project.create(:name => 'Another project')
+  end
+
+  def teardown
+    teardown_db
+  end
+
   def test_normal_find
     project = Project.find(2)
     assert !project.versioned?
