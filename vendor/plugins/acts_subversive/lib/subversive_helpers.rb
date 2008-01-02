@@ -70,8 +70,7 @@ module ::ActiveRecord #:nodoc:
         # De-reference the non-versioned class so it gets loaded
         eval(class_name)
 
-        object_versions = eval(class_name + 'Version').find(:all, :joins => 'v',
-          :conditions => cond)
+        object_versions = eval(class_name + 'Version').find_by_sql(cond)
         versioned_objects = []
         for object_version in object_versions
           object = eval(class_name).new
@@ -94,9 +93,9 @@ module ::ActiveRecord #:nodoc:
             base_version = owned.instance_variable_get('@base_version')
             cond = condition_find_versioned(owned_version_plural,
               owned.attributes[foreign_key], base_version)
-            object_version = other_versioned_class.find(:first, :joins => 'v',
-              :conditions => cond)
-            if (object_version)
+            objects_version = other_versioned_class.find_by_sql(cond)
+            if (objects_version.size == 1)
+              object_version = objects_version[0]
               object = other_class.new
               copy_from_versioned(object_version, object, base_version)
             else

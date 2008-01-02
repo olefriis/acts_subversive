@@ -18,6 +18,9 @@ class Act < ActiveRecord::Base
   acts_subversive
 end
 
+class User < ActiveRecord::Base
+end
+
 class Project
   # Various associations to versioned classes
   has_many :use_cases
@@ -25,8 +28,8 @@ class Project
   belongs_to :main_use_case, :class_name => 'UseCase', :foreign_key => 'main_use_case_id'
 
   # Associations to unversioned class
-  #has_many :current_users, :class_name => 'User', :foreign_key => 'current_project_id'
-  #belongs_to :created_by, :class_name => 'User', :foreign_key => 'created_by_id'
+  has_many :current_users, :class_name => 'User', :foreign_key => 'current_project_id'
+  belongs_to :created_by, :class_name => 'User', :foreign_key => 'created_by_id'
 end
 
 class UseCase
@@ -44,4 +47,8 @@ end
 class Act
   belongs_to :actor
   belongs_to :use_case
+end
+
+class User
+  belongs_to :current_project, :class_name => 'Project', :foreign_key => 'current_project_id'
 end

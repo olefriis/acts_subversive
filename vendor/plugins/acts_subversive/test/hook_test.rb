@@ -1,4 +1,4 @@
-require "#{File.dirname(__FILE__)}/test_setup"
+require File.dirname(__FILE__) + '/helpers/test_setup'
 
 class HookTest < Test::Unit::TestCase
   def setup
