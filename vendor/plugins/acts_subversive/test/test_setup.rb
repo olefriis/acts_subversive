@@ -10,3 +10,5 @@ require "#{File.dirname(__FILE__)}/../tasks/tasks"
 require "#{File.dirname(__FILE__)}/database_setup"
 require "#{File.dirname(__FILE__)}/model_classes"
 
+ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
+

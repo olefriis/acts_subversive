@@ -1,7 +1,5 @@
 require "#{File.dirname(__FILE__)}/test_setup"
 
-ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :dbfile => ":memory:")
-
 class VersionNumberTest < Test::Unit::TestCase
   def setup
     setup_db
