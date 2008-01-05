@@ -12,5 +12,4 @@
 # - deleted      (true if this version is the deletion of the entity)
 #
 # dop_versioned_table simply drops both the normal table and the versioned table.
-require 'tasks.rb'
-
+require File.dirname(__FILE__) + '/tasks.rb'
